@@ -1,0 +1,55 @@
+branch_map:
+  main: prod
+  develop: dev
+  feature/*: dev
+
+environments:
+  dev:
+    snowflake:
+      database: CT_PROTOCOL
+      schema: LINKML
+
+    stage:
+      name: "@kipi_acct_stg"
+      root_path: ""
+
+  prod:
+    snowflake:
+      database: RAW
+      schema: STAGE_RAW
+
+    stage:
+      name: "@prod_stage"
+      root_path: "incoming/prod/"
+
+defaults:
+  copy_options:
+    on_error: "CONTINUE"
+    force: false
+
+datasets:
+  - name: ctgov_all_browse_conditions
+    table: browse_conditions
+    s3_path_template: "year={year}/month={month}/"
+    file_name: "ctgov_all_browse_conditions.csv"
+    file_format_object: "FF_AACT_CSV"
+    query_tag:
+      app: data_ingestion
+      env: dev
+      data_source: aact
+      dataset: browse_conditions
+    copy_options:
+      match_by_column_name: "CASE_INSENSITIVE"
+
+  - name: ctgov_all_browse_interventions
+    table: browse_interventions
+    s3_path_template: "year={year}/month={month}/"
+    file_name: "ctgov_all_browse_interventions.csv"
+    file_format_object: "FF_AACT_CSV"
+    query_tag:
+      app: data_ingestion
+      env: dev
+      data_source: aact
+      dataset: browse_interventions
+    copy_options:
+      match_by_column_name: "CASE_INSENSITIVE"
