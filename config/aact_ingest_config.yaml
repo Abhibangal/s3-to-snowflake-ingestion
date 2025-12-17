@@ -1,0 +1,21 @@
+branch_map:
+  dev: dev
+  develop: dev
+  main: prod
+
+environments:
+  dev:
+    snowflake:
+      database: CT_PROTOCOL
+      schema: RAW_AACT
+    stage:
+      name: "@kipi_acct_stg"
+      root_path: ""
+
+  prod:
+    snowflake:
+      database: RAW
+      schema: STAGE_RAW
+    stage:
+      name: "@prod_stage"
+      root_path: "incoming/prod/"
