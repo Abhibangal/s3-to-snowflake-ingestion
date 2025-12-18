@@ -19,6 +19,9 @@ def get_env_cfg(cfg):
     env = detect_env(cfg)
     return cfg["environments"][env]
 
+def sql_string_literal(val: str) -> str:
+    return val.replace("'", "''")
+
 def build_copy_options_sql(copy_opts):
     clauses = []
     for k, v in (copy_opts or {}).items():
@@ -28,7 +31,7 @@ def build_copy_options_sql(copy_opts):
         elif isinstance(v, (int, float)):
             clauses.append(f"{key} = {v}")
         else:
-            clauses.append(f"{key} = '{v}'")
+            clauses.append(f"{key} = '{sql_string_literal(str(v))}'")
     return "\n".join(clauses)
 
 # ------------------------
@@ -56,35 +59,40 @@ def load_yaml_from_imports(config_file: str) -> dict:
 def get_dataset_configs(session, data_source=None, database=None, adhoc_id=None):
 
     if adhoc_id:
-        return session.sql(f"""
+        return session.sql(
+            f"""
             SELECT *
             FROM {database}.CONFIG_SCH.INGESTION_ADHOC_CONFIG
             WHERE adhoc_id = ?
               AND status = 'PENDING'
-        """,[adhoc_id]).collect()
+            """,
+            [adhoc_id]
+        ).collect()
 
     if data_source:
-        return session.sql(f"""
+        return session.sql(
+            f"""
             SELECT *
             FROM {database}.CONFIG_SCH.INGESTION_DATASET_CONFIG
             WHERE is_active = TRUE
               AND data_source = ?
-        """,[data_source]).collect()
+            """,
+            [data_source]
+        ).collect()
 
-    return session.sql(f"""
+    return session.sql(
+        f"""
         SELECT *
         FROM {database}.CONFIG_SCH.INGESTION_DATASET_CONFIG
         WHERE is_active = TRUE
-    """).collect()
+        """
+    ).collect()
 
 # ------------------------
 # Main Runner
 # ------------------------
 def run(session, config_file, data_source=None, adhoc_id=None):
 
-    # --------------------------------------------------
-    # Load YAML config by filename
-    # --------------------------------------------------
     cfg = load_yaml_from_imports(config_file)
 
     env_cfg = get_env_cfg(cfg)
@@ -111,7 +119,6 @@ def run(session, config_file, data_source=None, adhoc_id=None):
 
     for ds in datasets:
         stats["files_attempted"] += 1
-        event_id = str(uuid.uuid4())
         started = datetime.utcnow()
 
         table_fqn = f"{database}.{schema}.{ds['TABLE_NAME']}"
@@ -120,9 +127,7 @@ def run(session, config_file, data_source=None, adhoc_id=None):
         full_path = f"{root}/{file_path}" if root else file_path
 
         try:
-            # ------------------------
             # CREATE TABLE
-            # ------------------------
             if ds["FILE_TYPE"].upper() == "JSON":
                 session.sql(
                     f"CREATE TABLE IF NOT EXISTS {table_fqn} (RAW VARIANT)"
@@ -145,30 +150,21 @@ def run(session, config_file, data_source=None, adhoc_id=None):
                 f"ALTER TABLE {table_fqn} SET ENABLE_SCHEMA_EVOLUTION = TRUE"
             ).collect()
 
-            # ------------------------
-            # QUERY TAG
-            # ------------------------
+            # QUERY TAG (FIXED)
             if ds["QUERY_TAG"]:
-                tag = json.dumps(ds["QUERY_TAG"])
+                tag_json = json.dumps(ds["QUERY_TAG"])
                 session.sql(
-                    f"""ALTER SESSION 
-                    SET QUERY_TAG = ?
-                    """
-                    ,
-                    [tag]
+                    f"ALTER SESSION SET QUERY_TAG = '{sql_string_literal(tag_json)}'"
                 ).collect()
 
-            # ------------------------
             # COPY
-            # ------------------------
             copy_opt = build_copy_options_sql(ds["COPY_OPTIONS"])
-            copy_sql = f"""
+            session.sql(f"""
                 COPY INTO {table_fqn}
                 FROM '{stage}/{full_path}'
                 FILE_FORMAT = {ds["FILE_FORMAT_OBJECT"]}
                 {copy_opt}
-            """
-            session.sql(copy_sql).collect()
+            """).collect()
 
             result = session.sql(
                 "SELECT * FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))"
@@ -191,4 +187,4 @@ def run(session, config_file, data_source=None, adhoc_id=None):
         finally:
             session.sql("ALTER SESSION UNSET QUERY_TAG").collect()
 
-    return stats  
+    return stats
