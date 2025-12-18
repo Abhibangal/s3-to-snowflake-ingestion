@@ -7,7 +7,7 @@ environments:
   dev:
     snowflake:
       database: CT_PROTOCOL
-      schema: RAW_AACT
+      schema: LINKML
     stage:
       name: "@kipi_acct_stg"
       root_path: ""
