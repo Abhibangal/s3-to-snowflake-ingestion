@@ -22,9 +22,24 @@ def get_env_cfg(cfg):
 def sql_string_literal(val: str) -> str:
     return val.replace("'", "''")
 
+def normalize_variant(val):
+    """
+    Snowpark VARIANT may come as dict or JSON string.
+    Normalize to Python dict.
+    """
+    if val is None:
+        return {}
+    if isinstance(val, dict):
+        return val
+    if isinstance(val, str):
+        return json.loads(val)
+    raise TypeError(f"Unsupported VARIANT type: {type(val)}")
+
 def build_copy_options_sql(copy_opts):
+    copy_opts = normalize_variant(copy_opts)
+
     clauses = []
-    for k, v in (copy_opts or {}).items():
+    for k, v in copy_opts.items():
         key = k.upper()
         if isinstance(v, bool):
             clauses.append(f"{key} = {str(v).upper()}")
@@ -116,7 +131,6 @@ def run(session, config_file, data_source=None, adhoc_id=None):
     }
 
     datasets = get_dataset_configs(session, data_source, database, adhoc_id)
-    print(datasets)
 
     for ds in datasets:
         stats["files_attempted"] += 1
@@ -128,7 +142,9 @@ def run(session, config_file, data_source=None, adhoc_id=None):
         full_path = f"{root}/{file_path}" if root else file_path
 
         try:
+            # ------------------------
             # CREATE TABLE
+            # ------------------------
             if ds["FILE_TYPE"].upper() == "JSON":
                 session.sql(
                     f"CREATE TABLE IF NOT EXISTS {table_fqn} (RAW VARIANT)"
@@ -151,14 +167,19 @@ def run(session, config_file, data_source=None, adhoc_id=None):
                 f"ALTER TABLE {table_fqn} SET ENABLE_SCHEMA_EVOLUTION = TRUE"
             ).collect()
 
+            # ------------------------
             # QUERY TAG (FIXED)
-            if ds["QUERY_TAG"]:
-                tag_json = json.dumps(ds["QUERY_TAG"])
+            # ------------------------
+            query_tag = normalize_variant(ds["QUERY_TAG"])
+            if query_tag:
+                tag_json = json.dumps(query_tag)
                 session.sql(
                     f"ALTER SESSION SET QUERY_TAG = '{sql_string_literal(tag_json)}'"
                 ).collect()
 
+            # ------------------------
             # COPY
+            # ------------------------
             copy_opt = build_copy_options_sql(ds["COPY_OPTIONS"])
             session.sql(f"""
                 COPY INTO {table_fqn}
