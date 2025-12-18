@@ -193,7 +193,7 @@ def run(session, config_file, data_source=None, adhoc_id=None):
             ).collect()
 
             rows_loaded = max(
-                [r["ROWS_LOADED"] for r in result if r["ROWS_LOADED"] is not None],
+                [r["rows_loaded"] for r in result if r["rows_loaded"] is not None],
                 default=0
             )
 
