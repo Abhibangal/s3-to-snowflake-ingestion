@@ -149,19 +149,24 @@ def run(session, config_file, data_source=None, adhoc_id=None):
             # QUERY TAG
             # ------------------------
             if ds["QUERY_TAG"]:
+                tag = json.dumps(ds["QUERY_TAG"])
                 session.sql(
-                    "ALTER SESSION SET QUERY_TAG = ?",
-                    [json.dumps(ds["QUERY_TAG"])]
+                    f"""ALTER SESSION 
+                    SET QUERY_TAG = ?
+                    """
+                    ,
+                    [tag]
                 ).collect()
 
             # ------------------------
             # COPY
             # ------------------------
+            copy_opt = build_copy_options_sql(ds["COPY_OPTIONS"])
             copy_sql = f"""
                 COPY INTO {table_fqn}
                 FROM '{stage}/{full_path}'
                 FILE_FORMAT = {ds["FILE_FORMAT_OBJECT"]}
-                {build_copy_options_sql(ds["COPY_OPTIONS"])}
+                {copy_opt}
             """
             session.sql(copy_sql).collect()
 
