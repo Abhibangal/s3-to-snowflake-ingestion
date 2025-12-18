@@ -9,7 +9,7 @@ PACKAGES = ('snowflake-snowpark-python')
 IMPORTS = (
     '@CT_PROTOCOL.LINKML.S3_TO_SF_GIT_REPO/branches/dev/ingestion/aws_s3_snf_ingestion.py'
 )
-HANDLER = 'MAIN'
+HANDLER = 'main'
 EXECUTE AS CALLER
 AS
 $$
