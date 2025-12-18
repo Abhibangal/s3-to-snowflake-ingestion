@@ -116,6 +116,7 @@ def run(session, config_file, data_source=None, adhoc_id=None):
     }
 
     datasets = get_dataset_configs(session, data_source, database, adhoc_id)
+    print(datasets)
 
     for ds in datasets:
         stats["files_attempted"] += 1
