@@ -23,13 +23,7 @@ type = service;
 desc user dev_ingestion;
 show users;
 
-alter user dev_ingestion set rsa_public_key ='MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAxewsDLZuzni2n6OsjY5N
-K3ZcWi+lnqjYrnandiCl+uY8fGF+USlLF377eXuB0Of+puLhRTGTk5FFDibqiPr0
-J56Z++uUk3+aHNxFimGhzWzDG2Kaj3bz2e9Mw61WwwRaNh5G0U4B0N23mMpWVEog
-9VjfmbuEG3+azW9yvSKZcDpmxtZVBFRfrSC1bsHY5PfLGd9nCxDz+wl7EfXL4aLu
-RfnVrvZzxvboS+PPWNVT8TdjljVn/hl9Hr21AQWgc3XAZhi9t7o9mNAHr1QpUU6Y
-gEALB2K8UO/12tpjxN8me0ngYCQeFV+cWH6Ej7NPN9B3HRgDiK4qxG7EZFm0ObhH
-tQIDAQAB';
+alter user dev_ingestion set rsa_public_key ='<redacted>';
 
 revoke role sysadmin from user dev_ingestion;
 create role role_fr_dev_ingest;
