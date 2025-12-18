@@ -173,10 +173,10 @@ def run(session, data_source, adhoc_id=None):
             rows_loaded = 0
 
             for r in result:
-                if "STATUS" in r and r["STATUS"]:
-                    status_msg = r["STATUS"]
-                if "ROWS_LOADED" in r and r["ROWS_LOADED"] is not None:
-                    rows_loaded = max(rows_loaded, int(r["ROWS_LOADED"]))
+                if "status" in r and r["status"]:
+                    status_msg = r["status"]
+                if "rows_loaded" in r and r["rows_loaded"] is not None:
+                    rows_loaded = max(rows_loaded, int(r["rows_loaded"]))
 
             if status_msg and "0 files processed" in status_msg.lower():
                 stats["files_already_loaded"] += 1
