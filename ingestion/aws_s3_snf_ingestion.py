@@ -150,7 +150,7 @@ def run(session, config_file, data_source=None, adhoc_id=None):
             # ------------------------
             if ds["QUERY_TAG"]:
                 session.sql(
-                    "ALTER SESSION SET QUERY_TAG = %s",
+                    "ALTER SESSION SET QUERY_TAG = ?",
                     [json.dumps(ds["QUERY_TAG"])]
                 ).collect()
 
