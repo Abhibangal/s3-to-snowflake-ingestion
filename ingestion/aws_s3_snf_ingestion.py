@@ -1,5 +1,8 @@
 import json
 import uuid
+import yaml
+import sys
+import os
 from datetime import datetime
 
 # ------------------------
@@ -29,9 +32,28 @@ def build_copy_options_sql(copy_opts):
     return "\n".join(clauses)
 
 # ------------------------
+# Load YAML from IMPORTS
+# ------------------------
+def load_yaml_from_imports(config_file: str) -> dict:
+    import_dir = sys._xoptions.get("snowflake_import_directory")
+    if not import_dir:
+        raise RuntimeError("Snowflake import directory not available")
+
+    config_path = os.path.join(import_dir, config_file)
+
+    if not os.path.exists(config_path):
+        raise FileNotFoundError(
+            f"Config file '{config_file}' not found. "
+            f"Available files: {os.listdir(import_dir)}"
+        )
+
+    with open(config_path, "r") as f:
+        return yaml.safe_load(f)
+
+# ------------------------
 # Fetch configs
 # ------------------------
-def get_dataset_configs(session, data_source=None,database=None, adhoc_id=None):
+def get_dataset_configs(session, data_source=None, database=None, adhoc_id=None):
 
     if adhoc_id:
         return session.sql(f"""
@@ -49,7 +71,7 @@ def get_dataset_configs(session, data_source=None,database=None, adhoc_id=None):
               AND data_source = %s
         """, [data_source]).collect()
 
-    return session.sql("""
+    return session.sql(f"""
         SELECT *
         FROM {database}.CONFIG_SCH.INGESTION_DATASET_CONFIG
         WHERE is_active = TRUE
@@ -58,7 +80,12 @@ def get_dataset_configs(session, data_source=None,database=None, adhoc_id=None):
 # ------------------------
 # Main Runner
 # ------------------------
-def run(session, cfg, data_source=None, adhoc_id=None):
+def run(session, config_file, data_source=None, adhoc_id=None):
+
+    # --------------------------------------------------
+    # Load YAML config by filename
+    # --------------------------------------------------
+    cfg = load_yaml_from_imports(config_file)
 
     env_cfg = get_env_cfg(cfg)
     snow_cfg = env_cfg["snowflake"]
@@ -80,7 +107,7 @@ def run(session, cfg, data_source=None, adhoc_id=None):
         "files_already_loaded": 0
     }
 
-    datasets = get_dataset_configs(session, data_source,database, adhoc_id)
+    datasets = get_dataset_configs(session, data_source, database, adhoc_id)
 
     for ds in datasets:
         stats["files_attempted"] += 1
@@ -97,9 +124,9 @@ def run(session, cfg, data_source=None, adhoc_id=None):
             # CREATE TABLE
             # ------------------------
             if ds["FILE_TYPE"].upper() == "JSON":
-                session.sql(f"""
-                    CREATE TABLE IF NOT EXISTS {table_fqn} (RAW VARIANT)
-                """).collect()
+                session.sql(
+                    f"CREATE TABLE IF NOT EXISTS {table_fqn} (RAW VARIANT)"
+                ).collect()
             else:
                 session.sql(f"""
                     CREATE TABLE IF NOT EXISTS {table_fqn}
@@ -154,6 +181,7 @@ def run(session, cfg, data_source=None, adhoc_id=None):
 
         except Exception:
             stats["files_failed"] += 1
+            raise
 
         finally:
             session.sql("ALTER SESSION UNSET QUERY_TAG").collect()
