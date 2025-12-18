@@ -59,17 +59,17 @@ def get_dataset_configs(session, data_source=None, database=None, adhoc_id=None)
         return session.sql(f"""
             SELECT *
             FROM {database}.CONFIG_SCH.INGESTION_ADHOC_CONFIG
-            WHERE adhoc_id = {adhoc_id}
+            WHERE adhoc_id = ?
               AND status = 'PENDING'
-        """).collect()
+        """,[adhoc_id]).collect()
 
     if data_source:
         return session.sql(f"""
             SELECT *
             FROM {database}.CONFIG_SCH.INGESTION_DATASET_CONFIG
             WHERE is_active = TRUE
-              AND data_source = {data_source}
-        """).collect()
+              AND data_source = ?
+        """,[data_source]).collect()
 
     return session.sql(f"""
         SELECT *
