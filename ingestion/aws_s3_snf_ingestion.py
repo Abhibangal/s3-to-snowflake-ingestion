@@ -192,15 +192,18 @@ def run(session, config_file, data_source=None, adhoc_id=None):
                 "SELECT * FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))"
             ).collect()
 
-            rows_loaded = max(
-                [r["rows_loaded"] for r in result if r["rows_loaded"] is not None],
-                default=0
-            )
-
-            if rows_loaded > 0:
-                stats["files_loaded"] += 1
-            else:
+            if result['status'] == "LOADED":
+                rows_loaded = max(
+                    [r["rows_loaded"] for r in result if r["rows_loaded"] is not None],
+                    default=0
+                )
+        
+                if rows_loaded > 0:
+                    stats["files_loaded"] += 1
+            elif result['status'] == "Copy executed with 0 files processed.":
                 stats["files_already_loaded"] += 1
+            else:
+                stats["files_failed"] += 1
 
         except Exception:
             stats["files_failed"] += 1
