@@ -153,8 +153,44 @@ ENABLE_SCHEMA_EVOLUTION = TRUE
 🏷 Query Tagging
 
 Query tags are applied dynamically per dataset
-```{
+```
+{
   "app": "data_ingestion",
   "source": "aact",
   "dataset": "browse_conditions"
-}```
+}
+```
+This enables:
+
+-  Lineage
+-  Cost attribution
+-  Debugging
+-  Governance
+
+📊 Output
+
+The stored procedure returns execution statistics:
+
+```
+{
+  "files_attempted": 10,
+  "files_loaded": 8,
+  "files_already_loaded": 2,
+  "files_failed": 0
+}
+```
+🎯 Design Principles
+
+-  Configuration over code
+-  Full pushdown execution
+-  Idempotency
+-  Environment isolation
+-  Observability-first design
+
+📌 Future Enhancements
+
+-  Parallel COPY execution
+-  Retry framework
+-  Snowflake Tasks integration
+-  Data quality checks
+-SLA & monitoring dashboards
