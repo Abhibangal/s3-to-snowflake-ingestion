@@ -1,3 +1,13 @@
+CREATE OR REPLACE TABLE CONFIG_SCH.INGESTION_SOURCE_ENV (
+    source_name        STRING,        -- aact, citeline
+    env_name            STRING,        -- dev / prod
+    target_database     STRING,
+    target_schema       STRING,
+    stage_name          STRING,        -- @kipi_acct_stg
+    current_env_flag    BOOLEAN        -- TRUE for active env
+);
+
+
 CREATE TABLE IF NOT EXISTS CONFIG_SCH.INGESTION_DATASET_CONFIG (
     dataset_name        STRING,
     data_source         STRING,
@@ -41,6 +51,11 @@ CREATE TABLE IF NOT EXISTS CONFIG_SCH.INGESTION_ADHOC_CONFIG (
 );
 
 
+
+
+INSERT INTO CONFIG_SCH.INGESTION_SOURCE_ENV VALUES
+('aact','dev','CT_PROTOCOL','LINKML','@kipi_acct_stg', TRUE),
+('aact','prod','RAW','STAGE_RAW','@prod_stage', FALSE);
 
 
 
