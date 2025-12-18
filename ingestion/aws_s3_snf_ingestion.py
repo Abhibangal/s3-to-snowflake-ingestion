@@ -192,7 +192,7 @@ def run(session, config_file, data_source=None, adhoc_id=None):
                 "SELECT * FROM TABLE(RESULT_SCAN(LAST_QUERY_ID()))"
             ).collect()
 
-            if result['status'] == "LOADED":
+            if max(result['status']) == "LOADED":
                 rows_loaded = max(
                     [r["rows_loaded"] for r in result if r["rows_loaded"] is not None],
                     default=0
